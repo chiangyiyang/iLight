@@ -9,7 +9,9 @@ class Setting:
 	def save(self):
 		print('Save Settings')
 
+
 setting = Setting()
+
 
 def setup():
 	# set hardware
@@ -39,27 +41,25 @@ def getPage(type):
 SSID:<input name="id" type="text" value=""><br>
 PASSWORD:<input  name="pw" type="password" value=""><br>
 <button type="submit">OK</button>
-<button type="reset">Cancel</button>
+<button type="reset">Cancel</button><br>
+<a href="/icontrol">Control</a>
 </form>
 </body>
 </html>"""
-		, 'control': """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>iLight Setup</title>
-</head>
-<body>
-<form method="post">
-<h1>iLight Setup</h1><hr>
-SSID:<input name="id" type="text" value=""><br>
-PASSWORD:<input  name="pw" type="password" value=""><br>
-<button type="submit">OK</button>
-<button type="reset">Cancel</button>
+		, 'control': """<!DOCTYPE html>
+<html>
+<head> <title>iLight</title> </head>
+<form>
+LED0:
+<button name="LED" value="ON0" type="submit">LED ON</button>
+<button name="LED" value="OFF0" type="submit">LED OFF</button><br><br>
+LED2:
+<button name="LED" value="ON2" type="submit">LED ON</button>
+<button name="LED" value="OFF2" type="submit">LED OFF</button><br>
+<a href="/isetup">Setup</a>
 </form>
-</body>
-</html>"""}
+</html>
+"""}
 	return pages[type]
 
 
@@ -71,10 +71,9 @@ def run2():
 	setup()  # set GPIO...
 	setting.load()
 	if (not isWifiSetup()) or (isResetDown()):
-		print("Response Wifi setup page")
-		response = getPage('setup')
+		pgType = 'setup'
 	else:
-		response = getPage('control')
+		pgType = 'control'
 	# Listen port 80 / 8080
 	print('Listen Port 80 / 8080')
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -113,7 +112,11 @@ def run2():
 				pass  # LedG.duty(Vs[1])
 				pass  # LedB.duty(Vs[2])
 				print ("Save control status")
-
+			if request.find('GET /isetup') > -1:
+				pgType = 'setup'
+			if request.find('GET /icontrol') > -1:
+				pgType = 'control'
+			response = getPage(pgType)
 			print('\n\nResponse:\n%s\n\n\n' % (response))
 			conn.send(response)
 			conn.close()
