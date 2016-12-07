@@ -1,30 +1,51 @@
 def runLedServer():
-	# import network
-	# ap_if = network.WLAN(network.AP_IF)
-	# ap_if.config(essid="iLight", authmode=network.AUTH_WPA_WPA2_PSK, password="12345678")
+	import sys
 	import socket
-	import machine
-	from machine import Pin, PWM
-	setButton = Pin(14, Pin.IN, Pin.PULL_UP)
-	doSet = setButton.value()
+	
+	doSetup = False
+	if sys.platform == 'esp8266':
+		# import network
+		# ap_if = network.WLAN(network.AP_IF)
+		# ap_if.config(essid="iLight", authmode=network.AUTH_WPA_WPA2_PSK, password="12345678")
+		from machine import Pin, PWM
+		doSetup = (Pin(14, Pin.IN, Pin.PULL_UP).value() == 0)
 	html = ""
-	if doSet == 0:
-		html = "Setup"
+	if doSetup:
+		html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>iLight Setup</title>
+</head>
+<body>
+<form method="post">
+<h1>iLight Setup</h1><hr>
+Link: <a href="/icontrol/">Control</a><hr>
+SSID:<input name="id" type="text" value=""><br><br>
+PASSWORD:<input  name="pw" type="password" value=""><br><br>
+<button type="submit">OK</button>
+<button type="reset">Reset</button>
+</form>
+</body>
+</html>"""
 	else:
 		# HTML to send to browsers
 		html = """<!DOCTYPE html>
-		<html>
-		<head> <title>iLight</title> </head>
-		<form>
-		LED0: 
-		<button name="LED" value="ON0" type="submit">LED ON</button>
-		<button name="LED" value="OFF0" type="submit">LED OFF</button><br><br>
-		LED2: 
-		<button name="LED" value="ON2" type="submit">LED ON</button>
-		<button name="LED" value="OFF2" type="submit">LED OFF</button>
-		</form>
-		</html>
-		"""
+<html>
+<head> <title>iLight</title> </head>
+<form>
+<h1>iLight Control</h1><hr>
+Link: <a href="/isetup/">Setup</a><hr>
+LED0: 
+<button name="LED" value="ON0" type="submit">LED ON</button>
+<button name="LED" value="OFF0" type="submit">LED OFF</button><br><br>
+LED2: 
+<button name="LED" value="ON2" type="submit">LED ON</button>
+<button name="LED" value="OFF2" type="submit">LED OFF</button>
+</form>
+</html>
+"""
 	# Setup PINS
 	# LED0 = machine.Pin(0, machine.Pin.OUT)
 	# LED2 = machine.Pin(2, machine.Pin.OUT)
@@ -47,8 +68,6 @@ def runLedServer():
 			LEDON2 = request.find('/?LED=ON2')
 			LEDOFF2 = request.find('/?LED=OFF2')
 			LedRGB = request.find('/?RGB=')
-			# print("Data: " + str(LEDON0))
-			# print("Data2: " + str(LEDOFF0))
 			if LEDON0 == 6:
 				print('TURN LED0 ON')
 				# LED0.low()

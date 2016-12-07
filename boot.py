@@ -6,10 +6,10 @@ import webrepl
 webrepl.start()
 gc.collect()
 
-import ledServer
-ledServer.runLedServer()
+# import ledServer
+# ledServer.runLedServer()
 # import iLight
 # iLight.run()
 
-# from iLight import iLightServer
-# iLightServer().run()
+from iLight import iLightServer
+iLightServer().run()

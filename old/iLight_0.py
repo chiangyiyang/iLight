@@ -78,9 +78,12 @@ RGB:
 				print("Accept Connection from '%s'" % str(addr))
 				request = str(conn.recv(1024))
 				print("Content:\n[%s]\n\n\n" % (request))
-				pos = request.find('GET /favicon.ico HTTP/1.1')
-				if pos > -1:
-					continue
+				# pos = request.find('GET /favicon.ico HTTP/1.1')
+				# if pos > -1:
+				# 	conn.send(self.pages[pgType])
+				# 	conn.close()
+				# 	print('Connection is closed!!\n\n\n\n')
+				# 	continue
 				pos = request.find('\r\n\r\nid=')
 				if pos > -1:
 					# setup page post back

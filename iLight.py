@@ -12,7 +12,44 @@ class iLightServer:
 			print('Save Settings')
 	
 	setting = Setting()
-	pages = {'setup': """
+	ssid = ''
+	pw = ''
+	
+	# 	pages = {'setup': b"""
+	# <!DOCTYPE html>
+	# <html lang="en">
+	# <head>
+	# <meta charset="UTF-8">
+	# <title>iLight Setup</title>
+	# </head>
+	# <body>
+	# <form method="post">
+	# <h1>iLight Setup</h1><hr>
+	# Link: <a href="/icontrol/">Control</a><hr>
+	# SSID:<input name="ssid" type="text" value=""><br><br>
+	# PASSWORD:<input  name="pw" type="password" value=""><br><br>
+	# <button type="submit">OK</button>
+	# <button type="reset">Reset</button>
+	# </form>
+	# </body>
+	# </html>"""
+	# 		, 'control': b"""<!DOCTYPE html>
+	# <html>
+	# <head> <title>iLight</title> </head>
+	# <form>
+	# <h1>iLight Control</h1><hr>
+	# Link: <a href="/isetup/">Setup</a><hr>
+	# RGB:
+	# <button name="RGB" value="0x0x0" type="submit">0%</button>
+	# <button name="RGB" value="512x512x512" type="submit">50%</button>
+	# <button name="RGB" value="1023x1023x1023" type="submit">100%</button>
+	# </form>
+	# </html>
+	# """}
+	# 	
+	def getPage(self, pgType):
+		if pgType == 'setup':
+			return b"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,15 +60,15 @@ class iLightServer:
 <form method="post">
 <h1>iLight Setup</h1><hr>
 Link: <a href="/icontrol/">Control</a><hr>
-
-SSID:<input name="id" type="text" value=""><br><br>
+SSID:<input name="ssid" type="text" value=""><br><br>
 PASSWORD:<input  name="pw" type="password" value=""><br><br>
 <button type="submit">OK</button>
 <button type="reset">Reset</button>
 </form>
 </body>
 </html>"""
-		, 'control': """<!DOCTYPE html>
+		if pgType == 'control':
+			return b"""<!DOCTYPE html>
 <html>
 <head> <title>iLight</title> </head>
 <form>
@@ -43,7 +80,7 @@ RGB:
 <button name="RGB" value="1023x1023x1023" type="submit">100%</button>
 </form>
 </html>
-"""}
+"""
 	
 	def setup(self):
 		if sys.platform == 'esp8266':
@@ -59,7 +96,6 @@ RGB:
 	def isResetDown(self):
 		# return True
 		return False
-
 	
 	def isWifiSetup(self):
 		return True
@@ -88,15 +124,17 @@ RGB:
 				print("Content:\n[%s]\n\n\n" % (request))
 				pos = request.find('GET /favicon.ico HTTP/1.1')
 				if pos > -1:
+					# conn.send(self.pages[pgType])
+					conn.close()
 					continue
-				pos = request.find('\r\n\r\nid=')
+				pos = request.find('\\r\\n\\r\\nssid=')
 				if pos > -1:
 					# setup page post back
 					print("Update settings")
-					kv = dict(s.split('=') for s in request[pos + 4:].split('&'))
-					self.ssid = kv['id']
+					kv = dict(s.split('=') for s in request[pos + 8:].split('&'))
+					self.ssid = kv['ssid']
 					self.pw = kv['pw']
-					print("ESSID: '%s'  PW: '%s'" % (setting.ssid, setting.pw))
+					print("ESSID: '%s'  PW: '%s'" % (self.ssid, self.pw))
 					# import network
 					# ap_if = network.WLAN(network.AP_IF)
 					# ap_if.config(essid="iLight", authmode=network.AUTH_WPA_WPA2_PSK, password="12345678")
@@ -125,7 +163,8 @@ RGB:
 				if request.find('GET /icontrol/') > -1:
 					pgType = 'control'
 				# print('\n\nResponse:\n%s\n\n\n' % (self.pages(pgType)))
-				conn.send(self.pages[pgType])
+				# conn.send(self.pages[pgType])
+				conn.send(self.getPage(pgType))
 				conn.close()
 				print('Connection is closed!!\n\n\n\n')
 			except KeyboardInterrupt:
