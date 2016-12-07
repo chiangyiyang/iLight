@@ -6,48 +6,74 @@ import sys
 class iLightServer:
 	ssid = ''
 	pw = ''
-	
+
+	def updateWifi(self):
+		print('\nUpdate Wifi\n')
+		if sys.platform == 'esp8266':
+			import network
+			sta_if = network.WLAN(network.STA_IF)
+			sta_if.active(True)
+			sta_if.connect(self.ssid, self.pw)
+			sleep(15)
+			if not sta_if.isconnected():
+				print('Link to AP(%s) failed!!' % self.ssid)
+				ap_if = network.WLAN(network.AP_IF)
+				ap_if.config(essid="iLight", authmode=network.AUTH_WPA_WPA2_PSK, password="12345678")
+
 	def loadSetting(self):
 		print('Load Settings')
-	
+		try:
+			with open("settings.ini") as f:
+				kv = dict(s.split('=') for s in f.read().split('&'))
+				self.ssid = kv['ssid']
+				self.pw = kv['pw']
+				f.close()
+				self.updateWifi()
+
+		except  Exception as ex:
+			print("Error occurred in loadSetting:\n%s\n\n" % ex)
+
 	def saveSetting(self):
 		print('Save Settings')
-	
+		with open("settings.ini", "w") as f:
+			f.write("ssid=%s&pw=%s" % (self.ssid, self.pw))
+			f.close()
+
 	def getPage(self, pgType):
 		if pgType == 'setup':
 			return ("""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>iLight Setup</title>
-</head>
-<body>
-<form>
-<h1>iLight Setup</h1><hr>
-Link: <a href="/icontrol/">Control</a><hr>
-SSID:<input name="ssid" type="text" value="{0}"><br><br>
-PASSWORD:<input  name="pw" type="password" value=""><br><br>
-<button type="submit">OK</button>
-<button type="reset">Reset</button>
-</form>
-</body>
-</html>""".format(self.ssid))
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+	<meta charset="UTF-8">
+	<title>iLight Setup</title>
+	</head>
+	<body>
+	<form>
+	<h1>iLight Setup</h1><hr>
+	Link: <a href="/icontrol/">Control</a><hr>
+	SSID:<input name="ssid" type="text" value="{0}"><br><br>
+	PASSWORD:<input  name="pw" type="password" value=""><br><br>
+	<button type="submit">OK</button>
+	<button type="reset">Reset</button>
+	</form>
+	</body>
+	</html>""".format(self.ssid))
 		if pgType == 'control':
 			return """<!DOCTYPE html>
-<html>
-<head> <title>iLight</title> </head>
-<form>
-<h1>iLight Control</h1><hr>
-Link: <a href="/isetup/">Setup</a><hr>
-RGB:
-<button name="RGB" value="0x0x0" type="submit">0%</button>
-<button name="RGB" value="512x512x512" type="submit">50%</button>
-<button name="RGB" value="1023x1023x1023" type="submit">100%</button>
-</form>
-</html>
-"""
-	
+	<html>
+	<head> <title>iLight</title> </head>
+	<form>
+	<h1>iLight Control</h1><hr>
+	Link: <a href="/isetup/">Setup</a><hr>
+	RGB:
+	<button name="RGB" value="0x0x0" type="submit">0%</button>
+	<button name="RGB" value="512x512x512" type="submit">50%</button>
+	<button name="RGB" value="1023x1023x1023" type="submit">100%</button>
+	</form>
+	</html>
+	"""
+
 	def setup(self):
 		if sys.platform == 'esp8266':
 			from machine import Pin, PWM
@@ -58,14 +84,14 @@ RGB:
 			self.LedB = PWM(Pin(0), freq=500, duty=0)  # D3
 		else:
 			pass
-	
+
 	def isResetDown(self):
 		# return True
 		return False
-	
+
 	def isWifiSetup(self):
 		return True
-	
+
 	def run(self):
 		self.setup()  # set GPIO...
 		self.loadSetting()
@@ -102,14 +128,9 @@ RGB:
 					self.ssid = kv['ssid']
 					self.pw = kv['pw']
 					print("ESSID: '%s'  PW: '%s'" % (self.ssid, self.pw))
-					# import network
-					# ap_if = network.WLAN(network.AP_IF)
-					# ap_if.config(essid="iLight", authmode=network.AUTH_WPA_WPA2_PSK, password="12345678")
-					# sta_if = network.WLAN(network.STA_IF)
-					# sta_if.active(True)
-					# sta_if.connect("YY WIFI", "mary1234")
+					self.updateWifi()
 					self.saveSetting()
-				
+
 				pSt = request.find('/?RGB=')
 				if pSt > -1:
 					# control page post back
