@@ -58,7 +58,7 @@ RGB:
 	
 	def run(self):
 		self.setup()  # set GPIO...
-		self.setting.load()
+		self.setting.loadSetting()
 		if (not self.isWifiSetup()) or (self.isResetDown()):
 			pgType = 'setup'
 		else:
@@ -98,7 +98,7 @@ RGB:
 					# sta_if = network.WLAN(network.STA_IF)
 					# sta_if.active(True)
 					# sta_if.connect("YY WIFI", "mary1234")
-					self.setting.save()
+					self.setting.saveSetting()
 				
 				pSt = request.find('/?RGB=')
 				if pSt > -1:

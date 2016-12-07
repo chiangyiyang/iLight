@@ -4,52 +4,18 @@ import sys
 
 
 class iLightServer:
-	class Setting:
-		def load(self):
-			print('Load Settings')
-		
-		def save(self):
-			print('Save Settings')
-	
-	setting = Setting()
 	ssid = ''
 	pw = ''
 	
-	# 	pages = {'setup': b"""
-	# <!DOCTYPE html>
-	# <html lang="en">
-	# <head>
-	# <meta charset="UTF-8">
-	# <title>iLight Setup</title>
-	# </head>
-	# <body>
-	# <form method="post">
-	# <h1>iLight Setup</h1><hr>
-	# Link: <a href="/icontrol/">Control</a><hr>
-	# SSID:<input name="ssid" type="text" value=""><br><br>
-	# PASSWORD:<input  name="pw" type="password" value=""><br><br>
-	# <button type="submit">OK</button>
-	# <button type="reset">Reset</button>
-	# </form>
-	# </body>
-	# </html>"""
-	# 		, 'control': b"""<!DOCTYPE html>
-	# <html>
-	# <head> <title>iLight</title> </head>
-	# <form>
-	# <h1>iLight Control</h1><hr>
-	# Link: <a href="/isetup/">Setup</a><hr>
-	# RGB:
-	# <button name="RGB" value="0x0x0" type="submit">0%</button>
-	# <button name="RGB" value="512x512x512" type="submit">50%</button>
-	# <button name="RGB" value="1023x1023x1023" type="submit">100%</button>
-	# </form>
-	# </html>
-	# """}
-	# 	
+	def loadSetting(self):
+		print('Load Settings')
+	
+	def saveSetting(self):
+		print('Save Settings')
+	
 	def getPage(self, pgType):
 		if pgType == 'setup':
-			return b"""
+			return ("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,18 +23,18 @@ class iLightServer:
 <title>iLight Setup</title>
 </head>
 <body>
-<form method="post">
+<form>
 <h1>iLight Setup</h1><hr>
 Link: <a href="/icontrol/">Control</a><hr>
-SSID:<input name="ssid" type="text" value=""><br><br>
+SSID:<input name="ssid" type="text" value="{0}"><br><br>
 PASSWORD:<input  name="pw" type="password" value=""><br><br>
 <button type="submit">OK</button>
 <button type="reset">Reset</button>
 </form>
 </body>
-</html>"""
+</html>""".format(self.ssid))
 		if pgType == 'control':
-			return b"""<!DOCTYPE html>
+			return """<!DOCTYPE html>
 <html>
 <head> <title>iLight</title> </head>
 <form>
@@ -102,7 +68,7 @@ RGB:
 	
 	def run(self):
 		self.setup()  # set GPIO...
-		self.setting.load()
+		self.loadSetting()
 		if (not self.isWifiSetup()) or (self.isResetDown()):
 			pgType = 'setup'
 		else:
@@ -127,11 +93,12 @@ RGB:
 					# conn.send(self.pages[pgType])
 					conn.close()
 					continue
-				pos = request.find('\\r\\n\\r\\nssid=')
-				if pos > -1:
-					# setup page post back
+				pSt = request.find('/isetup/?ssid=')
+				if pSt == 6:
+					# setup page back   ex. /isetup/?ssid=myAP&pw=12345678 HTTP
 					print("Update settings")
-					kv = dict(s.split('=') for s in request[pos + 8:].split('&'))
+					pEnd = request.find(' HTTP/1.1')
+					kv = dict(s.split('=') for s in request[pSt + 9:pEnd].split('&'))
 					self.ssid = kv['ssid']
 					self.pw = kv['pw']
 					print("ESSID: '%s'  PW: '%s'" % (self.ssid, self.pw))
@@ -141,7 +108,7 @@ RGB:
 					# sta_if = network.WLAN(network.STA_IF)
 					# sta_if.active(True)
 					# sta_if.connect("YY WIFI", "mary1234")
-					self.setting.save()
+					self.saveSetting()
 				
 				pSt = request.find('/?RGB=')
 				if pSt > -1:
@@ -163,8 +130,7 @@ RGB:
 				if request.find('GET /icontrol/') > -1:
 					pgType = 'control'
 				# print('\n\nResponse:\n%s\n\n\n' % (self.pages(pgType)))
-				# conn.send(self.pages[pgType])
-				conn.send(self.getPage(pgType))
+				conn.send(self.getPage(pgType).encode())
 				conn.close()
 				print('Connection is closed!!\n\n\n\n')
 			except KeyboardInterrupt:
