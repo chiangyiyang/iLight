@@ -4,14 +4,6 @@ import sys
 
 
 class iLightServer:
-	class Setting:
-		def load(self):
-			print('Load Settings')
-		
-		def save(self):
-			print('Save Settings')
-	
-	setting = Setting()
 	pages = {'setup': """
 <!DOCTYPE html>
 <html lang="en">
